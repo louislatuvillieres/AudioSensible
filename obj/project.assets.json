@@ -1,0 +1,167 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0": {
+      "OpenTK.Core/5.0.0-pre.1": {
+        "type": "package",
+        "compile": {
+          "lib/net5.0/OpenTK.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net5.0/OpenTK.Core.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "OpenTK.Mathematics/5.0.0-pre.1": {
+        "type": "package",
+        "compile": {
+          "lib/net5.0/OpenTK.Mathematics.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net5.0/OpenTK.Mathematics.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "OpenTK.OpenAL/5.0.0-pre.1": {
+        "type": "package",
+        "dependencies": {
+          "OpenTK.Core": "[5.0.0-pre.1, 6.0.0-pre)",
+          "OpenTK.Mathematics": "[5.0.0-pre.1, 6.0.0-pre)"
+        },
+        "compile": {
+          "lib/net5.0/OpenTK.OpenAL.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net5.0/OpenTK.OpenAL.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "OpenTK.Core/5.0.0-pre.1": {
+      "sha512": "PHY5o2xGLahPb1zJnAsZaZHTW3ISSWw9qxvd9kBC2vkeRnxr3D7hzA9qx/vYYZUjb0uqFZzlPiyqSwrRYmlY8A==",
+      "type": "package",
+      "path": "opentk.core/5.0.0-pre.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net5.0/OpenTK.Core.dll",
+        "lib/net5.0/OpenTK.Core.pdb",
+        "lib/net5.0/OpenTK.Core.xml",
+        "opentk.core.5.0.0-pre.1.nupkg.sha512",
+        "opentk.core.nuspec"
+      ]
+    },
+    "OpenTK.Mathematics/5.0.0-pre.1": {
+      "sha512": "SIobBgRlDCOMe3roT/FzaFxeu0u2cXvNHDxPLBbLhH1iN/UK+goDnSA9D5LvbKOk44jCJ9Sje8QC0PSiZbJOwQ==",
+      "type": "package",
+      "path": "opentk.mathematics/5.0.0-pre.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net5.0/OpenTK.Mathematics.dll",
+        "lib/net5.0/OpenTK.Mathematics.pdb",
+        "lib/net5.0/OpenTK.Mathematics.xml",
+        "opentk.mathematics.5.0.0-pre.1.nupkg.sha512",
+        "opentk.mathematics.nuspec"
+      ]
+    },
+    "OpenTK.OpenAL/5.0.0-pre.1": {
+      "sha512": "eQf9dGth0YPu1cFeI8JjhZ6rs0IMH8FDmkdwrceRojPXpLjPQm6h8zoKNBZfPRi3a/8pnToIkfxeGKXA7UVLbA==",
+      "type": "package",
+      "path": "opentk.openal/5.0.0-pre.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net5.0/OpenTK.OpenAL.dll",
+        "lib/net5.0/OpenTK.OpenAL.pdb",
+        "lib/net5.0/OpenTK.OpenAL.xml",
+        "opentk.openal.5.0.0-pre.1.nupkg.sha512",
+        "opentk.openal.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "OpenTK.OpenAL >= 5.0.0-pre.1"
+    ]
+  },
+  "packageFolders": {
+    "/home/elv/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
+      "projectName": "HearingLossSimulator",
+      "projectPath": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
+      "packagesPath": "/home/elv/.nuget/packages/",
+      "outputPath": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/home/elv/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.300"
+    },
+    "frameworks": {
+      "net9.0": {
+        "targetAlias": "net9.0",
+        "dependencies": {
+          "OpenTK.OpenAL": {
+            "target": "Package",
+            "version": "[5.0.0-pre.1, )"
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.305/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

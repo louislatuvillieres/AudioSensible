@@ -1,0 +1,75 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "HearingLossSimulator/1.0.0": {
+        "dependencies": {
+          "OpenTK.OpenAL": "5.0.0-pre.1"
+        },
+        "runtime": {
+          "HearingLossSimulator.dll": {}
+        }
+      },
+      "OpenTK.Core/5.0.0-pre.1": {
+        "runtime": {
+          "lib/net5.0/OpenTK.Core.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      },
+      "OpenTK.Mathematics/5.0.0-pre.1": {
+        "runtime": {
+          "lib/net5.0/OpenTK.Mathematics.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      },
+      "OpenTK.OpenAL/5.0.0-pre.1": {
+        "dependencies": {
+          "OpenTK.Core": "5.0.0-pre.1",
+          "OpenTK.Mathematics": "5.0.0-pre.1"
+        },
+        "runtime": {
+          "lib/net5.0/OpenTK.OpenAL.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "HearingLossSimulator/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "OpenTK.Core/5.0.0-pre.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PHY5o2xGLahPb1zJnAsZaZHTW3ISSWw9qxvd9kBC2vkeRnxr3D7hzA9qx/vYYZUjb0uqFZzlPiyqSwrRYmlY8A==",
+      "path": "opentk.core/5.0.0-pre.1",
+      "hashPath": "opentk.core.5.0.0-pre.1.nupkg.sha512"
+    },
+    "OpenTK.Mathematics/5.0.0-pre.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SIobBgRlDCOMe3roT/FzaFxeu0u2cXvNHDxPLBbLhH1iN/UK+goDnSA9D5LvbKOk44jCJ9Sje8QC0PSiZbJOwQ==",
+      "path": "opentk.mathematics/5.0.0-pre.1",
+      "hashPath": "opentk.mathematics.5.0.0-pre.1.nupkg.sha512"
+    },
+    "OpenTK.OpenAL/5.0.0-pre.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-eQf9dGth0YPu1cFeI8JjhZ6rs0IMH8FDmkdwrceRojPXpLjPQm6h8zoKNBZfPRi3a/8pnToIkfxeGKXA7UVLbA==",
+      "path": "opentk.openal/5.0.0-pre.1",
+      "hashPath": "opentk.openal.5.0.0-pre.1.nupkg.sha512"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "xwaBEPdlwvQ=",
+  "success": true,
+  "projectFilePath": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
+  "expectedPackageFiles": [
+    "/home/elv/.nuget/packages/opentk.core/5.0.0-pre.1/opentk.core.5.0.0-pre.1.nupkg.sha512",
+    "/home/elv/.nuget/packages/opentk.mathematics/5.0.0-pre.1/opentk.mathematics.5.0.0-pre.1.nupkg.sha512",
+    "/home/elv/.nuget/packages/opentk.openal/5.0.0-pre.1/opentk.openal.5.0.0-pre.1.nupkg.sha512"
+  ],
+  "logs": []
+}
