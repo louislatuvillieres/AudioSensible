@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using OpenTK.Audio.OpenAL;
@@ -17,6 +18,13 @@ namespace HearingLossSimulator
         private const int BUFFER_COUNT = 4;
         private const int SAMPLE_RATE = 44100;
         private const int BUFFER_SIZE = 2048;
+        private const int PROCESS_CHUNK = 256;
+
+        private readonly Queue<short> captureQueue = new Queue<short>(16384);
+        private readonly List<short> playbackAccumulator = new List<short>(2048);
+        private readonly object audioLock = new object();
+        private int buffersQueued = 0;
+
         
         private AudioProcessor? processor;
         private AudiologicalProfile profile;
@@ -109,80 +117,151 @@ namespace HearingLossSimulator
         public void Start()
         {
             isRunning = true;
-            latencyTimer.Start();
+            latencyTimer.Restart();
 
-            // Démarrage de la capture
             ALC.CaptureStart(captureDevice);
 
-            // Démarrage du thread de traitement
-            captureThread = new Thread(CaptureLoop);
+            captureThread = new Thread(CaptureLoop)
+            {
+                IsBackground = true,
+                Priority = ThreadPriority.Highest
+            };
             captureThread.Start();
         }
 
         private void CaptureLoop()
         {
-            short[] captureBuffer = new short[BUFFER_SIZE];
-            int buffersQueued = 0;
-            
+            short[] tempCapture = new short[1024];
+            bool playbackStarted = false;
+
             while (isRunning)
             {
-                // Vérification des échantillons disponibles
-                int samplesAvailable = ALC.GetAvailableSamples(captureDevice);
+                /* =======================
+                * 1️⃣ CAPTURE IMMÉDIATE
+                * ======================= */
 
-                if (samplesAvailable >= BUFFER_SIZE)
+                int available = ALC.GetAvailableSamples(captureDevice);
+
+                if (available > 0)
                 {
-                    var startTime = latencyTimer.Elapsed.TotalMilliseconds;
+                    int toRead = Math.Min(available, tempCapture.Length);
 
-                    // Capture des échantillons
                     unsafe
                     {
-                        fixed (short* ptr = captureBuffer)
+                        fixed (short* ptr = tempCapture)
                         {
-                            ALC.CaptureSamples(captureDevice, (IntPtr)ptr, BUFFER_SIZE);
+                            ALC.CaptureSamples(captureDevice, (IntPtr)ptr, toRead);
                         }
                     }
 
-                    // Calcul du niveau d'entrée
-                    inputLevel = CalculateRMS(captureBuffer);
+                    lock (audioLock)
+                    {
+                        for (int i = 0; i < toRead; i++)
+                            captureQueue.Enqueue(tempCapture[i]);
+                    }
+                }
 
-                    // Traitement audio
-                    short[] processedBuffer = processor!.Process(captureBuffer);
+                /* =======================
+                * 2️⃣ DSP PAR CHUNKS
+                * ======================= */
 
-                    // Calcul du niveau de sortie
-                    outputLevel = CalculateRMS(processedBuffer);
+                while (true)
+                {
+                    short[] chunk;
 
-                    // Conversion en stéréo pour la lecture
-                    short[] stereoBuffer = ConvertToStereo(processedBuffer);
+                    lock (audioLock)
+                    {
+                        if (captureQueue.Count < PROCESS_CHUNK)
+                            break;
 
-                    // Envoi vers OpenAL
+                        chunk = new short[PROCESS_CHUNK];
+                        for (int i = 0; i < PROCESS_CHUNK; i++)
+                            chunk[i] = captureQueue.Dequeue();
+                    }
+
+                    // Mesure niveau entrée (sous-échantillonnée possible)
+                    inputLevel = CalculateRMS(chunk);
+
+                    // DSP
+                    var processed = processor!.Process(chunk);
+
+                    outputLevel = CalculateRMS(processed);
+
+                    lock (audioLock)
+                    {
+                        playbackAccumulator.AddRange(processed);
+                    }
+                }
+
+                /* =======================
+                * 3️⃣ ENVOI OPENAL
+                * ======================= */
+
+                while (true)
+                {
+                    short[] block;
+
+                    lock (audioLock)
+                    {
+                        if (playbackAccumulator.Count < BUFFER_SIZE)
+                            break;
+
+                        block = playbackAccumulator
+                            .GetRange(0, BUFFER_SIZE)
+                            .ToArray();
+
+                        playbackAccumulator.RemoveRange(0, BUFFER_SIZE);
+                    }
+
+                    var stereo = ConvertToStereo(block);
+
                     if (buffersQueued < BUFFER_COUNT)
                     {
-                        // Phase d'initialisation : remplir tous les buffers
-                        QueueInitialBuffer(stereoBuffer, buffersQueued);
+                        // Amorçage : on remplit les buffers OpenAL
+                        unsafe
+                        {
+                            fixed (short* ptr = stereo)
+                            {
+                                AL.BufferData(
+                                    buffers[buffersQueued],
+                                    ALFormat.Stereo16,
+                                    (IntPtr)ptr,
+                                    stereo.Length * sizeof(short),
+                                    SAMPLE_RATE
+                                );
+                            }
+                        }
+
+                        AL.SourceQueueBuffer(source, buffers[buffersQueued]);
                         buffersQueued++;
-                        
-                        // Démarrer la lecture une fois qu'on a au moins 2 buffers
+
+                        // On démarre UNIQUEMENT quand au moins 2 buffers sont prêts
                         if (buffersQueued == 2)
                         {
                             AL.SourcePlay(source);
+                            playbackStarted = true;
                         }
                     }
                     else
                     {
-                        // Phase normale : remplacer les buffers traités
-                        QueueAudioBuffer(stereoBuffer);
+                        QueueAudioBuffer(stereo);
                     }
 
-                    // Calcul de la latence
-                    var endTime = latencyTimer.Elapsed.TotalMilliseconds;
-                    latencyMs = endTime - startTime;
+                    if (!playbackStarted)
+                    {
+                        AL.SourcePlay(source);
+                        playbackStarted = true;
+                    }
                 }
-                else
-                {
-                    Thread.Sleep(1);
-                }
+
+                /* =======================
+                * 4️⃣ FEEDBACK CPU FRIENDLY
+                * ======================= */
+
+                Thread.Yield(); // meilleur que Sleep(1)
             }
         }
+
 
         private void QueueInitialBuffer(short[] data, int bufferIndex)
         {
@@ -201,32 +280,34 @@ namespace HearingLossSimulator
 
         private void QueueAudioBuffer(short[] data)
         {
-            // Récupération d'un buffer traité
-            AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int buffersProcessed);
-            
-            if (buffersProcessed > 0)
+            AL.GetSource(source, ALGetSourcei.BuffersProcessed, out int processed);
+
+            if (processed <= 0)
+                return;
+
+            int buffer = AL.SourceUnqueueBuffer(source);
+
+            unsafe
             {
-                // Déqueue et remplir avec nouvelles données
-                int buffer = AL.SourceUnqueueBuffer(source);
-                
-                unsafe
+                fixed (short* ptr = data)
                 {
-                    fixed (short* ptr = data)
-                    {
-                        AL.BufferData(buffer, ALFormat.Stereo16, (IntPtr)ptr, data.Length * sizeof(short), SAMPLE_RATE);
-                    }
+                    AL.BufferData(
+                        buffer,
+                        ALFormat.Stereo16,
+                        (IntPtr)ptr,
+                        data.Length * sizeof(short),
+                        SAMPLE_RATE
+                    );
                 }
-                
-                AL.SourceQueueBuffer(source, buffer);
             }
 
-            // Redémarrage si la source s'est arrêtée
+            AL.SourceQueueBuffer(source, buffer);
+
             AL.GetSource(source, ALGetSourcei.SourceState, out int state);
             if ((ALSourceState)state != ALSourceState.Playing)
-            {
                 AL.SourcePlay(source);
-            }
         }
+
 
         private short[] ConvertToStereo(short[] mono)
         {

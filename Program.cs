@@ -11,7 +11,7 @@ namespace HearingLossSimulator
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine("═══════════════════════════════════════════════════");
-            Console.WriteLine("    SIMULATEUR DE SURDITÉ - Version Multiplateforme");
+            Console.WriteLine("    SIMULATEUR DE SURDITÉ");
             Console.WriteLine("═══════════════════════════════════════════════════\n");
 
             try
@@ -27,19 +27,24 @@ namespace HearingLossSimulator
                     return;
                 }
 
-                // 1. Sélection périphérique de capture
-                var captureDevice = SelectCaptureDevice();
-                if (captureDevice == null) return;
+                bool quit = false;
 
-                // 2. Sélection profil audiologique
-                var profile = SelectAudiologicalProfile();
+                while(!quit) {
+                    // 1. Sélection périphérique de capture
+                    var captureDevice = SelectCaptureDevice();
+                    if (captureDevice == null) return;
 
-                // 3. Activation HRTF
-                var useHRTF = SelectHRTFOption();
+                    // 2. Sélection profil audiologique
+                    var profile = SelectAudiologicalProfile();
 
-                // 4. Démarrage simulation
-                Console.Clear();
-                RunSimulation(captureDevice, profile, useHRTF);
+                    // 3. Activation HRTF
+                    // var useHRTF = SelectHRTFOption();
+
+                    // 4. Démarrage simulation
+                    Console.Clear();
+                    RunSimulation(captureDevice, profile, false, out bool reconfigure);
+                    quit = !reconfigure;
+                }
             }
             catch (Exception ex)
             {
@@ -162,7 +167,7 @@ namespace HearingLossSimulator
             return useHRTF;
         }
 
-        static void RunSimulation(string captureDevice, AudiologicalProfile profile, bool useHRTF)
+        static void RunSimulation(string captureDevice, AudiologicalProfile profile, bool useHRTF, out bool reconfigure)
         {
             Console.WriteLine("═══════════════════════════════════════════════════");
             Console.WriteLine("    SIMULATION EN COURS");
@@ -176,6 +181,7 @@ namespace HearingLossSimulator
                 Console.WriteLine("❌ Échec de l'initialisation du simulateur.");
                 Console.ResetColor();
                 Console.ReadKey();
+                reconfigure = false;
                 return;
             }
 
@@ -195,9 +201,24 @@ namespace HearingLossSimulator
             }
 
             simulator.Stop();
-            Console.WriteLine("\n\n✓ Simulation arrêtée.");
-            Console.WriteLine("Appuyez sur une touche pour quitter...");
-            Console.ReadKey();
+            Console.WriteLine("\nSimulation arrêtée.");
+            Console.WriteLine("[R] Reconfigurer");
+            Console.WriteLine("[Q] Quitter");
+
+            while (true)
+            {
+                var key = Console.ReadKey(true).Key;
+                if (key == ConsoleKey.R)
+                {
+                    reconfigure = true;
+                    return;
+                }
+                if (key == ConsoleKey.Q || key == ConsoleKey.Escape)
+                {
+                    reconfigure = false;
+                    return;
+                }
+            }
         }
     }
 

@@ -17,3 +17,4 @@
 /home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/Debug/net9.0/HearingLossSimulator.pdb
 /home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/Debug/net9.0/AudioSensible.genruntimeconfig.cache
 /home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/Debug/net9.0/ref/HearingLossSimulator.dll
+/home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/Debug/net9.0/AudioSensible.sourcelink.json

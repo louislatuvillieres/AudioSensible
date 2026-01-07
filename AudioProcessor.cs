@@ -17,10 +17,16 @@ namespace HearingLossSimulator
         private static readonly int[] FrequencyBands = { 125, 250, 500, 1000, 2000, 4000, 8000 };
         private const int SAMPLE_RATE = 44100;
 
+        private const float GLOBAL_GAIN_DB = -5f;
+        private readonly float globalGainLinear;
+
         public AudioProcessor(AudiologicalProfile prof, bool hrtf)
         {
             profile = prof;
             useHRTF = hrtf;
+
+            globalGainLinear = (float)Math.Pow(10.0, GLOBAL_GAIN_DB / 20.0);
+
             InitializeFilters();
         }
 
@@ -65,7 +71,9 @@ namespace HearingLossSimulator
             short[] outputBuffer = new short[inputBuffer.Length];
             for (int i = 0; i < inputBuffer.Length; i++)
             {
-                float limited = Math.Max(-1.0f, Math.Min(1.0f, processed[i]));
+                float withGain = processed[i] * globalGainLinear;
+
+                float limited = Math.Max(-1.0f, Math.Min(1.0f, withGain));
                 outputBuffer[i] = (short)(limited * 32767.0f);
             }
 
