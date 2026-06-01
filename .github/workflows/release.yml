@@ -65,8 +65,6 @@ jobs:
               -pointsize 48 -gravity center -annotate 0 'AS' AppDir/AudioSensible.png
           fi
           ln -sf AudioSensible.png AppDir/.DirIcon
-          sed -i "s/^Version=.*/Version=${{ steps.version.outputs.version }}/" \
-            AppDir/AudioSensible.desktop
 
       - name: Build AppImage
         env:

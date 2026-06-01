@@ -8,6 +8,5 @@ Exec=AppRun
 Icon=AudioSensible
 Terminal=false
 Type=Application
-Categories=AudioVideo;Audio;Education;Science;
+Categories=AudioVideo;Audio;
 Keywords=audio;alsa;hearing;audiologie;surdite;simulation;
-Version=1.0.0
