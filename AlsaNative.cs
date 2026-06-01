@@ -1,13 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace HearingLossSimulator
 {
+    public record DeviceInfo(string Name, string Description);
+
     public static class AlsaNative
     {
         private const string ALSA_LIB = "libasound.so.2";
 
-        // Types ALSA
         public enum snd_pcm_stream_t
         {
             SND_PCM_STREAM_PLAYBACK = 0,
@@ -24,11 +26,11 @@ namespace HearingLossSimulator
             SND_PCM_FORMAT_S16_LE = 2
         }
 
-        // Handles opaques
         public struct snd_pcm_t { public IntPtr handle; }
         public struct snd_pcm_hw_params_t { public IntPtr handle; }
+        public struct snd_pcm_sw_params_t { public IntPtr handle; }
 
-        // Fonctions principales ALSA
+        // Hardware params
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
         public static extern int snd_pcm_open(out snd_pcm_t pcm, string name, snd_pcm_stream_t stream, int mode);
 
@@ -65,6 +67,25 @@ namespace HearingLossSimulator
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
         public static extern int snd_pcm_hw_params(snd_pcm_t pcm, snd_pcm_hw_params_t hw_params);
 
+        // Software params (NOUVEAUTÉ pour éviter underruns)
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_pcm_sw_params_malloc(out snd_pcm_sw_params_t sw_params);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void snd_pcm_sw_params_free(snd_pcm_sw_params_t sw_params);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_pcm_sw_params_current(snd_pcm_t pcm, snd_pcm_sw_params_t sw_params);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_pcm_sw_params_set_start_threshold(snd_pcm_t pcm, snd_pcm_sw_params_t sw_params, ulong val);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_pcm_sw_params_set_avail_min(snd_pcm_t pcm, snd_pcm_sw_params_t sw_params, ulong val);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_pcm_sw_params(snd_pcm_t pcm, snd_pcm_sw_params_t sw_params);
+
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
         public static extern int snd_pcm_prepare(snd_pcm_t pcm);
 
@@ -81,6 +102,9 @@ namespace HearingLossSimulator
         public static extern int snd_pcm_recover(snd_pcm_t pcm, int err, int silent);
 
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern long snd_pcm_avail(snd_pcm_t pcm);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
         public static extern int snd_pcm_drop(snd_pcm_t pcm);
 
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
@@ -89,7 +113,58 @@ namespace HearingLossSimulator
         [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr snd_strerror(int errnum);
 
-        // Helpers
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_device_name_hint(int card, string iface, out IntPtr hints);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int snd_device_name_free_hint(IntPtr hints);
+
+        [DllImport(ALSA_LIB, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr snd_device_name_get_hint(IntPtr hint, string id);
+
+        [DllImport("libc.so.6", CallingConvention = CallingConvention.Cdecl)]
+        public static extern void free(IntPtr ptr);
+
+        public static List<DeviceInfo> EnumerateDevices(bool capture)
+        {
+            var devices = new List<DeviceInfo>();
+            if (snd_device_name_hint(-1, "pcm", out IntPtr hints) != 0)
+                return devices;
+            try
+            {
+                IntPtr current = hints;
+                while (true)
+                {
+                    IntPtr hint = Marshal.ReadIntPtr(current);
+                    if (hint == IntPtr.Zero) break;
+
+                    IntPtr namePtr = snd_device_name_get_hint(hint, "NAME");
+                    IntPtr descPtr = snd_device_name_get_hint(hint, "DESC");
+                    IntPtr ioidPtr = snd_device_name_get_hint(hint, "IOID");
+
+                    string name = namePtr != IntPtr.Zero ? Marshal.PtrToStringAnsi(namePtr) ?? "" : "";
+                    string desc = descPtr != IntPtr.Zero ? Marshal.PtrToStringAnsi(descPtr) ?? "" : "";
+                    string ioid = ioidPtr != IntPtr.Zero ? Marshal.PtrToStringAnsi(ioidPtr) ?? "" : "";
+
+                    if (namePtr != IntPtr.Zero) free(namePtr);
+                    if (descPtr != IntPtr.Zero) free(descPtr);
+                    if (ioidPtr != IntPtr.Zero) free(ioidPtr);
+
+                    // IOID vide = device bidirectionnel, accepté dans les deux sens
+                    bool match = ioid == "" || (capture ? ioid == "Input" : ioid == "Output");
+                    if (match && name != "")
+                        devices.Add(new DeviceInfo(name, desc));
+
+                    current = IntPtr.Add(current, IntPtr.Size);
+                }
+            }
+            finally
+            {
+                snd_device_name_free_hint(hints);
+            }
+            return devices;
+        }
+
         public static string GetErrorString(int error)
         {
             IntPtr ptr = snd_strerror(error);
@@ -105,7 +180,6 @@ namespace HearingLossSimulator
         }
     }
 
-    // Classe wrapper pour simplifier l'utilisation
     public class AlsaDevice : IDisposable
     {
         private AlsaNative.snd_pcm_t handle;
@@ -179,13 +253,50 @@ namespace HearingLossSimulator
 
                 result = AlsaNative.snd_pcm_hw_params(handle, hw_params);
                 AlsaNative.CheckError(result, "snd_pcm_hw_params");
-
-                result = AlsaNative.snd_pcm_prepare(handle);
-                AlsaNative.CheckError(result, "snd_pcm_prepare");
             }
             finally
             {
                 AlsaNative.snd_pcm_hw_params_free(hw_params);
+            }
+
+            // ✅ NOUVEAUTÉ : Configuration software params pour playback
+            if (!isCapture)
+            {
+                ConfigureSoftwareParams();
+            }
+
+            result = AlsaNative.snd_pcm_prepare(handle);
+            AlsaNative.CheckError(result, "snd_pcm_prepare");
+        }
+
+        private void ConfigureSoftwareParams()
+        {
+            int result;
+            AlsaNative.snd_pcm_sw_params_t sw_params;
+
+            result = AlsaNative.snd_pcm_sw_params_malloc(out sw_params);
+            AlsaNative.CheckError(result, "snd_pcm_sw_params_malloc");
+
+            try
+            {
+                result = AlsaNative.snd_pcm_sw_params_current(handle, sw_params);
+                AlsaNative.CheckError(result, "snd_pcm_sw_params_current");
+
+                // Démarrer le playback après avoir rempli 2 périodes
+                ulong startThreshold = periodSize * 2;
+                result = AlsaNative.snd_pcm_sw_params_set_start_threshold(handle, sw_params, startThreshold);
+                AlsaNative.CheckError(result, "snd_pcm_sw_params_set_start_threshold");
+
+                // Réveiller le thread quand 1 période est disponible
+                result = AlsaNative.snd_pcm_sw_params_set_avail_min(handle, sw_params, periodSize);
+                AlsaNative.CheckError(result, "snd_pcm_sw_params_set_avail_min");
+
+                result = AlsaNative.snd_pcm_sw_params(handle, sw_params);
+                AlsaNative.CheckError(result, "snd_pcm_sw_params");
+            }
+            finally
+            {
+                AlsaNative.snd_pcm_sw_params_free(sw_params);
             }
         }
 
@@ -208,9 +319,13 @@ namespace HearingLossSimulator
                 {
                     long result = AlsaNative.snd_pcm_readi(handle, (IntPtr)ptr, (ulong)frames);
                     
-                    if (result < 0)
+                    if (result == -32) // EPIPE = underrun/overrun
                     {
-                        // Tentative de récupération
+                        AlsaNative.snd_pcm_recover(handle, (int)result, 1); // silent=1
+                        return 0;
+                    }
+                    else if (result < 0)
+                    {
                         AlsaNative.snd_pcm_recover(handle, (int)result, 0);
                         return 0;
                     }
@@ -228,9 +343,13 @@ namespace HearingLossSimulator
                 {
                     long result = AlsaNative.snd_pcm_writei(handle, (IntPtr)ptr, (ulong)frames);
                     
-                    if (result < 0)
+                    if (result == -32) // EPIPE = underrun
                     {
-                        // Tentative de récupération
+                        AlsaNative.snd_pcm_recover(handle, (int)result, 1); // silent=1
+                        return 0;
+                    }
+                    else if (result < 0)
+                    {
                         AlsaNative.snd_pcm_recover(handle, (int)result, 0);
                         return 0;
                     }

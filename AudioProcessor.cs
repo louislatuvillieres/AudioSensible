@@ -11,13 +11,15 @@ namespace HearingLossSimulator
         // Courbes audiométriques (en dB de réduction)
         // Fréquences: 125, 250, 500, 1000, 2000, 4000, 8000 Hz
         private static readonly float[] NormalProfile = { 0, 0, 0, 0, 0, 0, 0 };
-        private static readonly float[] MildLossProfile = { 25, 30, 35, 35, 40, 45, 50 };
-        private static readonly float[] ModerateLossProfile = { 45, 50, 55, 60, 65, 70, 75 };
+        private static readonly float[] MildLossProfile = { 25, 30, 35, 35, 40, 45, 45 };
+        private static readonly float[] ModerateLossProfile = { 45, 45, 50, 50, 55, 55, 55 };
         
         private static readonly int[] FrequencyBands = { 125, 250, 500, 1000, 2000, 4000, 8000 };
         private const int SAMPLE_RATE = 44100;
 
-        private const float GLOBAL_GAIN_DB = -5f;
+        // Gain pour casque : entre -7.5 et -5dB
+        // Gain pour écouteurs : -15dB ~
+        private const float GLOBAL_GAIN_DB = -17f;
         private readonly float globalGainLinear;
 
         public AudioProcessor(AudiologicalProfile prof, bool hrtf)

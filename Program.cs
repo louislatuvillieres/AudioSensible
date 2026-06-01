@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
-using OpenTK.Audio.OpenAL;
 
 namespace HearingLossSimulator
 {
@@ -11,38 +9,25 @@ namespace HearingLossSimulator
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             Console.WriteLine("═══════════════════════════════════════════════════");
-            Console.WriteLine("    SIMULATEUR DE SURDITÉ");
+            Console.WriteLine("    SIMULATEUR DE SURDITÉ (ALSA NATIVE)");
             Console.WriteLine("═══════════════════════════════════════════════════\n");
 
             try
             {
-                // Vérification OpenAL
-                if (!CheckOpenALAvailability())
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("❌ OpenAL n'est pas disponible sur ce système.");
-                    Console.WriteLine("   Installez OpenAL Soft depuis https://openal-soft.org/");
-                    Console.ResetColor();
-                    Console.ReadKey();
-                    return;
-                }
-
                 bool quit = false;
 
-                while(!quit) {
-                    // 1. Sélection périphérique de capture
-                    var captureDevice = SelectCaptureDevice();
-                    if (captureDevice == null) return;
+                while (!quit)
+                {
+                    // 1. Sélection des périphériques audio
+                    string captureDevice = SelectDevice(capture: true);
+                    string playbackDevice = SelectDevice(capture: false);
 
                     // 2. Sélection profil audiologique
                     var profile = SelectAudiologicalProfile();
 
-                    // 3. Activation HRTF
-                    // var useHRTF = SelectHRTFOption();
-
-                    // 4. Démarrage simulation
+                    // 3. Démarrage simulation
                     Console.Clear();
-                    RunSimulation(captureDevice, profile, false, out bool reconfigure);
+                    RunSimulation(captureDevice, playbackDevice, profile, out bool reconfigure);
                     quit = !reconfigure;
                 }
             }
@@ -57,53 +42,44 @@ namespace HearingLossSimulator
             }
         }
 
-        static bool CheckOpenALAvailability()
+        static string SelectDevice(bool capture)
         {
-            try
-            {
-                var deviceList = ALC.GetStringList(GetEnumerationStringList.DeviceSpecifier);
-                return deviceList != null && deviceList.Any();
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        static string? SelectCaptureDevice()
-        {
-            Console.WriteLine("📥 SÉLECTION DU PÉRIPHÉRIQUE DE CAPTURE");
+            string direction = capture ? "ENTRÉE (Microphone)" : "SORTIE (Haut-parleurs)";
+            Console.WriteLine($"🎤 SÉLECTION DU PÉRIPHÉRIQUE {direction}");
             Console.WriteLine("─────────────────────────────────────────────────\n");
 
-            var deviceList = ALC.GetStringList(GetEnumerationStringList.CaptureDeviceSpecifier);
-            var devices = deviceList?.ToList();
-            
-            if (devices == null || devices.Count == 0)
+            var devices = AlsaNative.EnumerateDevices(capture);
+
+            if (devices.Count == 0)
             {
-                Console.WriteLine("❌ Aucun périphérique de capture détecté.");
-                Console.ReadKey();
-                return null;
+                Console.WriteLine("Aucun périphérique trouvé. Utilisation de \"default\".\n");
+                return "default";
             }
 
             for (int i = 0; i < devices.Count; i++)
             {
-                Console.WriteLine($"  [{i}] {devices[i]}");
+                string firstLine = devices[i].Description.Split('\n')[0];
+                Console.WriteLine($"  [{i}] {devices[i].Name}");
+                if (!string.IsNullOrEmpty(firstLine))
+                    Console.WriteLine($"      {firstLine}");
+                Console.WriteLine();
             }
 
-            Console.Write($"\n➤ Sélectionnez le périphérique (0-{devices.Count - 1}): ");
-            
-            if (int.TryParse(Console.ReadLine(), out int selection) && 
-                selection >= 0 && selection < devices.Count)
+            Console.Write($"➤ Sélectionnez le périphérique (0-{devices.Count - 1}): ");
+            string input = Console.ReadLine() ?? "";
+
+            if (int.TryParse(input, out int choice) && choice >= 0 && choice < devices.Count)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✓ Sélectionné: {devices[selection]}\n");
+                Console.WriteLine($"✓ Périphérique: {devices[choice].Name}\n");
                 Console.ResetColor();
-                return devices[selection];
+                return devices[choice].Name;
             }
 
-            Console.WriteLine("❌ Sélection invalide.");
-            Console.ReadKey();
-            return null;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"⚠ Choix invalide. Utilisation de: {devices[0].Name}\n");
+            Console.ResetColor();
+            return devices[0].Name;
         }
 
         static AudiologicalProfile SelectAudiologicalProfile()
@@ -148,32 +124,10 @@ namespace HearingLossSimulator
             return profile;
         }
 
-        static bool SelectHRTFOption()
+        static void RunSimulation(string captureDevice, string playbackDevice,
+                                  AudiologicalProfile profile, out bool reconfigure)
         {
-            Console.WriteLine("🎧 SIMULATION HRTF (Head-Related Transfer Function)");
-            Console.WriteLine("─────────────────────────────────────────────────\n");
-            Console.WriteLine("  [1] Activer HRTF (spatialisation 3D native OpenAL)");
-            Console.WriteLine("  [2] Désactiver HRTF (traitement direct)\n");
-
-            Console.Write("➤ Sélectionnez l'option (1-2): ");
-            var choice = Console.ReadLine();
-
-            bool useHRTF = choice == "1";
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"✓ HRTF: {(useHRTF ? "Activé (OpenAL Soft)" : "Désactivé")}\n");
-            Console.ResetColor();
-
-            return useHRTF;
-        }
-
-        static void RunSimulation(string captureDevice, AudiologicalProfile profile, bool useHRTF, out bool reconfigure)
-        {
-            Console.WriteLine("═══════════════════════════════════════════════════");
-            Console.WriteLine("    SIMULATION EN COURS");
-            Console.WriteLine("═══════════════════════════════════════════════════\n");
-
-            var simulator = new HearingLossSimulator(captureDevice, profile, useHRTF);
+            var simulator = new HearingLossSimulator(captureDevice, playbackDevice, profile);
             
             if (!simulator.Initialize())
             {
@@ -187,7 +141,15 @@ namespace HearingLossSimulator
 
             simulator.Start();
 
-            Console.WriteLine("Appuyez sur ECHAP pour arrêter la simulation...\n");
+            // Effacer les messages d'init et poser un header fixe de 6 lignes
+            // pour que SetCursorPosition(0, 6) dans UpdateDisplay() tombe au bon endroit
+            Console.Clear();
+            Console.WriteLine("═══════════════════════════════════════════════════");
+            Console.WriteLine("    SIMULATION EN COURS");
+            Console.WriteLine("═══════════════════════════════════════════════════");
+            Console.WriteLine();
+            Console.WriteLine("  [ECHAP] Arrêter   [R] Reconfigurer   [Q] Quitter");
+            Console.WriteLine();
 
             while (true)
             {
@@ -201,9 +163,7 @@ namespace HearingLossSimulator
             }
 
             simulator.Stop();
-            Console.WriteLine("\nSimulation arrêtée.");
-            Console.WriteLine("[R] Reconfigurer");
-            Console.WriteLine("[Q] Quitter");
+            Console.WriteLine("\nSimulation arrêtée. [R] Reconfigurer  [Q] Quitter");
 
             while (true)
             {

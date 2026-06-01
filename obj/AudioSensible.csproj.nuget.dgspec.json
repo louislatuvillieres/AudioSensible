@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj": {}
+    "/run/media/elv/DATA2/SAVE_LINUX_280126/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj": {}
   },
   "projects": {
-    "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj": {
+    "/run/media/elv/DATA2/SAVE_LINUX_280126/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
+        "projectUniqueName": "/run/media/elv/DATA2/SAVE_LINUX_280126/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
         "projectName": "HearingLossSimulator",
-        "projectPath": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
+        "projectPath": "/run/media/elv/DATA2/SAVE_LINUX_280126/Documents/_ENSC1A/TransD/AudioSensible/AudioSensible.csproj",
         "packagesPath": "/home/elv/.nuget/packages/",
-        "outputPath": "/home/elv/Documents/_ENSC1A/TransD/AudioSensible/obj/",
+        "outputPath": "/run/media/elv/DATA2/SAVE_LINUX_280126/Documents/_ENSC1A/TransD/AudioSensible/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/elv/.nuget/NuGet/NuGet.Config"
@@ -38,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "9.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -60,12 +60,18 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.14, 9.0.14]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/9.0.115/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
