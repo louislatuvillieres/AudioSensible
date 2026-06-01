@@ -1,11 +1,10 @@
+#if !WINDOWS
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace HearingLossSimulator
 {
-    public record DeviceInfo(string Name, string Description);
-
     public static class AlsaNative
     {
         private const string ALSA_LIB = "libasound.so.2";
@@ -150,9 +149,12 @@ namespace HearingLossSimulator
                     if (descPtr != IntPtr.Zero) free(descPtr);
                     if (ioidPtr != IntPtr.Zero) free(ioidPtr);
 
+                    // Périphériques physiques uniquement : hw: et plughw:
+                    bool isPhysical = name.StartsWith("hw:", StringComparison.Ordinal)
+                                   || name.StartsWith("plughw:", StringComparison.Ordinal);
                     // IOID vide = device bidirectionnel, accepté dans les deux sens
                     bool match = ioid == "" || (capture ? ioid == "Input" : ioid == "Output");
-                    if (match && name != "")
+                    if (isPhysical && match)
                         devices.Add(new DeviceInfo(name, desc));
 
                     current = IntPtr.Add(current, IntPtr.Size);
@@ -180,7 +182,7 @@ namespace HearingLossSimulator
         }
     }
 
-    public class AlsaDevice : IDisposable
+    public class AlsaDevice : IAudioDevice
     {
         private AlsaNative.snd_pcm_t handle;
         private bool isCapture;
@@ -370,3 +372,4 @@ namespace HearingLossSimulator
         }
     }
 }
+#endif

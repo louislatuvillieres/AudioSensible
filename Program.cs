@@ -48,7 +48,7 @@ namespace HearingLossSimulator
             Console.WriteLine($"🎤 SÉLECTION DU PÉRIPHÉRIQUE {direction}");
             Console.WriteLine("─────────────────────────────────────────────────\n");
 
-            var devices = AlsaNative.EnumerateDevices(capture);
+            var devices = AudioDeviceFactory.EnumerateDevices(capture);
 
             if (devices.Count == 0)
             {

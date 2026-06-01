@@ -19,7 +19,7 @@ namespace HearingLossSimulator
 
         // Gain pour casque : entre -7.5 et -5dB
         // Gain pour écouteurs : -15dB ~
-        private const float GLOBAL_GAIN_DB = -17f;
+        private const float GLOBAL_GAIN_DB = -0f;
         private readonly float globalGainLinear;
 
         public AudioProcessor(AudiologicalProfile prof, bool hrtf)

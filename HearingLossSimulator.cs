@@ -10,8 +10,8 @@ namespace HearingLossSimulator
         private string captureDeviceName;
         private string playbackDeviceName;
 
-        private AlsaDevice? captureDevice;
-        private AlsaDevice? playbackDevice;
+        private IAudioDevice? captureDevice;
+        private IAudioDevice? playbackDevice;
 
         private const int SAMPLE_RATE = 44100;
         private const int PERIOD_SIZE = 1024;      // Plus grand = plus stable
@@ -53,14 +53,14 @@ namespace HearingLossSimulator
                 Console.WriteLine($"🔊 Initialisation playback: {playbackDeviceName}");
 
                 // Capture mono
-                captureDevice = new AlsaDevice(captureDeviceName, true, SAMPLE_RATE, 1, 
+                captureDevice = AudioDeviceFactory.Create(captureDeviceName, true, SAMPLE_RATE, 1,
                     PERIOD_SIZE, PERIOD_SIZE * BUFFER_PERIODS);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"✓ Capture: {SAMPLE_RATE}Hz, période={PERIOD_SIZE}, buffer={PERIOD_SIZE * BUFFER_PERIODS}");
                 Console.ResetColor();
 
                 // Playback stéréo
-                playbackDevice = new AlsaDevice(playbackDeviceName, false, SAMPLE_RATE, 2, 
+                playbackDevice = AudioDeviceFactory.Create(playbackDeviceName, false, SAMPLE_RATE, 2,
                     PERIOD_SIZE, PERIOD_SIZE * BUFFER_PERIODS);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"✓ Playback: {SAMPLE_RATE}Hz, période={PERIOD_SIZE}, buffer={PERIOD_SIZE * BUFFER_PERIODS}");
@@ -70,7 +70,7 @@ namespace HearingLossSimulator
                 processor = new AudioProcessor(profile, false);
 
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("✓ Simulation ALSA initialisée avec succès !\n");
+                Console.WriteLine("✓ Simulation audio initialisée avec succès !\n");
                 Console.ResetColor();
 
                 return true;
