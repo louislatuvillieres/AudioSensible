@@ -6,7 +6,7 @@ namespace HearingLossSimulator
     {
         private AudiologicalProfile profile;
         private bool useHRTF;
-        private BiQuadFilter[]? filters;
+        private volatile BiQuadFilter[]? filters;
 
         // Courbes audiométriques (en dB de réduction)
         // Fréquences: 125, 250, 500, 1000, 2000, 4000, 8000 Hz
@@ -17,17 +17,14 @@ namespace HearingLossSimulator
         private static readonly int[] FrequencyBands = { 125, 250, 500, 1000, 2000, 4000, 8000 };
         private const int SAMPLE_RATE = 44100;
 
-        // Gain pour casque : entre -7.5 et -5dB
-        // Gain pour écouteurs : -15dB ~
-        private const float GLOBAL_GAIN_DB = -0f;
-        private readonly float globalGainLinear;
+        private volatile float globalGainLinear;
 
-        public AudioProcessor(AudiologicalProfile prof, bool hrtf)
+        public AudioProcessor(AudiologicalProfile prof, bool hrtf, float globalGainDb = 0f)
         {
             profile = prof;
             useHRTF = hrtf;
 
-            globalGainLinear = (float)Math.Pow(10.0, GLOBAL_GAIN_DB / 20.0);
+            globalGainLinear = (float)Math.Pow(10.0, globalGainDb / 20.0);
 
             InitializeFilters();
         }
@@ -55,6 +52,17 @@ namespace HearingLossSimulator
                     attenuationDb
                 );
             }
+        }
+
+        public void SetProfile(AudiologicalProfile newProfile)
+        {
+            profile = newProfile;
+            InitializeFilters();
+        }
+
+        public void SetGain(float gainDb)
+        {
+            globalGainLinear = (float)Math.Pow(10.0, gainDb / 20.0);
         }
 
         public short[] Process(short[] inputBuffer)

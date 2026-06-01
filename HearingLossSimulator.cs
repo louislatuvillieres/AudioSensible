@@ -25,20 +25,25 @@ namespace HearingLossSimulator
 
         private AudioProcessor? processor;
         private AudiologicalProfile profile;
+        private float globalGainDb;
 
         private float inputLevel;
         private float outputLevel;
+
+        public float InputLevel => inputLevel;
+        public float OutputLevel => outputLevel;
         private double latencyMs;
         private int underrunCount = 0;
 
         private bool isRunning;
         private Thread? audioThread;
 
-        public HearingLossSimulator(string captureDev, string playbackDev, AudiologicalProfile prof)
+        public HearingLossSimulator(string captureDev, string playbackDev, AudiologicalProfile prof, float gainDb = 0f)
         {
             captureDeviceName = captureDev;
             playbackDeviceName = playbackDev;
             profile = prof;
+            globalGainDb = gainDb;
 
             // Ring buffer : 4 secondes pour absorber les variations
             ringBufferSize = SAMPLE_RATE * 4;
@@ -67,7 +72,7 @@ namespace HearingLossSimulator
                 Console.ResetColor();
 
                 // DSP
-                processor = new AudioProcessor(profile, false);
+                processor = new AudioProcessor(profile, false, globalGainDb);
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("✓ Simulation audio initialisée avec succès !\n");
@@ -80,6 +85,18 @@ namespace HearingLossSimulator
                 Console.WriteLine($"❌ Erreur initialisation: {ex.Message}");
                 return false;
             }
+        }
+
+        public void SetGain(float gainDb)
+        {
+            globalGainDb = gainDb;
+            processor?.SetGain(gainDb);
+        }
+
+        public void SetProfile(AudiologicalProfile newProfile)
+        {
+            profile = newProfile;
+            processor?.SetProfile(newProfile);
         }
 
         public void Start()
@@ -218,7 +235,9 @@ namespace HearingLossSimulator
             string profileName = profile == AudiologicalProfile.Normal ? "Audition Normale" :
                                 profile == AudiologicalProfile.MildLoss ? "Surdité Légère" : "Surdité Moyenne";
             Console.WriteLine($"Profil: {profileName}");
-            Console.WriteLine($"Configuration: Période={PERIOD_SIZE}, Buffer={PERIOD_SIZE * BUFFER_PERIODS} samples\n");
+            string gainSign = globalGainDb >= 0 ? "+" : "";
+            Console.WriteLine($"Gain global: {gainSign}{globalGainDb:F0} dB   ");
+            Console.WriteLine($"Configuration: Période={PERIOD_SIZE}, Buffer={PERIOD_SIZE * BUFFER_PERIODS} samples  ");
 
             Console.Write("🔥 Entrée:  "); DrawVUMeter(inputLevel, ConsoleColor.Green);
             Console.WriteLine($" {(inputLevel * 100):F1}%  ");

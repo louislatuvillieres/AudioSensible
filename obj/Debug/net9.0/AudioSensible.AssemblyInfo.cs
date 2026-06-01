@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HearingLossSimulator")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a71484b369e6b8e34a6e8e9a70d0e234c1655c5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+285ce3e1bae5f89a3a0e86830da6bc5a7361be99")]
 [assembly: System.Reflection.AssemblyProductAttribute("HearingLossSimulator")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HearingLossSimulator")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
